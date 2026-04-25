@@ -125,7 +125,7 @@ void init_plotting_app()
     }
 }
 
-void plot(const std::vector<double> &x, const std::vector<double> &y,
+void Plot::plot(const std::vector<double> &x, const std::vector<double> &y,
           const char* win_name        , const char* line_name)
 {
     if(x.empty() || y.empty())
@@ -145,7 +145,7 @@ void plot(const std::vector<double> &x, const std::vector<double> &y,
     send_data(win_name, line_name, x, y, {}, PLOT_2D);
 }
 
-void plotting_app_bode(const std::vector<double> &freq, const std::vector<double> &mag, const std::vector<double> &phase)
+void Plot::bode_plot(const std::vector<double> &freq, const std::vector<double> &mag, const std::vector<double> &phase)
 {
     if(freq.size() != mag.size() || mag.size() != phase.size())
     {
@@ -156,4 +156,17 @@ void plotting_app_bode(const std::vector<double> &freq, const std::vector<double
     init_plotting_app();
 
     send_data("", "", freq, mag, phase, BODE);
+}
+
+void Plot::pzmap_plot(const std::vector<double> &real, const std::vector<double> &imag, const std::vector<double> &pz)
+{
+    if(real.size() != imag.size() || imag.size() != pz.size())
+    {
+        std::cerr << "real, imag, and pz vectors must be of the same size" << std::endl;
+        return;
+    }
+
+    init_plotting_app();
+
+    send_data("", "", real, imag, pz, PZMAP);
 }

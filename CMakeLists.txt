@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(Plot LANGUAGES C CXX)
+project(Plot LANGUAGES C CXX VERSION 0.1.1)
 
 set(CMAKE_C_STANDARD 14)
 set(CMAKE_CXX_STANDARD 14)
@@ -50,7 +50,7 @@ include(CMakePackageConfigHelpers)
 
 write_basic_package_version_file(
         "${CMAKE_CURRENT_BINARY_DIR}/plotConfigVersion.cmake"
-        VERSION 0.1.0
+        VERSION "${PROJECT_VERSION}"
         COMPATIBILITY SameMajorVersion
 )
 

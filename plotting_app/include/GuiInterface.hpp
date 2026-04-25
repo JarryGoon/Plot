@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef CONTROL_LIBRARY_PLOTTINGFUNC_HPP
-#define CONTROL_LIBRARY_PLOTTINGFUNC_HPP
+#ifndef PLOT_GUIINTERFACE_HPP
+#define PLOT_GUIINTERFACE_HPP
 
 #include <SDL3/SDL.h>
-
-#include "PlottingType.hpp"
 
 void init_ImPlot(SDL_GLContext* gl_context, SDL_Window** window);
 
@@ -31,8 +29,4 @@ void renderer(SDL_Window* window);
 
 void clear_ImPlot(const SDL_GLContext* gl_context, SDL_Window* window);
 
-void plot_2d(const std::string &window_name, PlotWindow &plot_window);
-
-void bode_plot(const std::string &window_name, PlotWindow &plot_window);
-
-#endif //CONTROL_LIBRARY_PLOTTINGFUNC_HPP
+#endif //PLOT_GUIINTERFACE_HPP

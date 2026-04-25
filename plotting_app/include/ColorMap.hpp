@@ -14,20 +14,9 @@
  * limitations under the License.
  */
 
-#ifndef CONTROL_LIBRARY_PLOT_HPP
-#define CONTROL_LIBRARY_PLOT_HPP
+#ifndef PLOT_COLORMAP_HPP
+#define PLOT_COLORMAP_HPP
 
-#include <vector>
 
-namespace Plot {
 
-void plot(const std::vector<double> &x, const std::vector<double> &y,
-          const char* win_name = ""   , const char* line_name = "");
-
-void bode_plot(const std::vector<double> &freq, const std::vector<double> &mag, const std::vector<double> &phase);
-
-void pzmap_plot(const std::vector<double> &real, const std::vector<double> &imag, const std::vector<double> &pz);
-
-}
-
-#endif //CONTROL_LIBRARY_PLOT_HPP
+#endif //PLOT_COLORMAP_HPP

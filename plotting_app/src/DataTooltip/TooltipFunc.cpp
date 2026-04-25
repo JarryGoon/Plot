@@ -27,13 +27,13 @@ void draw_datapoint(const ImVec2 &cursor, const std::string &id, bool is_fixed)
 
     spec_scatter.Marker          = ImPlotMarker_Circle;
     spec_scatter.MarkerSize      = 2;
-    spec_scatter.MarkerFillColor = ImVec4(0.7, 0.7, 0.7, 1);
-    spec_scatter.LineColor       = ImVec4(0.7, 0.7, 0.7, 1);
+    spec_scatter.MarkerFillColor = ImVec4(0.2, 0.2, 0.2, 1);
+    spec_scatter.LineColor       = ImVec4(0.2, 0.2, 0.2, 1);
     ImPlot::PlotScatter(("##SnapPoint_" + id).c_str(), &cursor.x, &cursor.y, 1, spec_scatter);
 
     if(!is_fixed)
     {
-        spec_line.LineColor = ImVec4(0.8, 0.8, 0.8, 1);
+        spec_line.LineColor = ImVec4(0.2, 0.2, 0.2, 1);
         ImPlot::PlotInfLines(("##VLine_" + id).c_str(), &cursor.x, 1, spec_line);
 
         spec_line.Flags = ImPlotInfLinesFlags_Horizontal;
@@ -77,10 +77,10 @@ void init_tooltip_window(const ImVec2 &tooltip_pos, ImVec2 tooltip_win_size, boo
 
     ImGui::SetCursorScreenPos(ImVec2(tooltip_pos.x + offset_x, tooltip_pos.y + offset_y));
 
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.15f, 0.15f, 0.15f, 0.9f));
-    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.3f, 0.3f, 0.3f, 0.9f));
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
 
-    if(is_fixed) ImPlot::GetPlotDrawList()->AddLine(tooltip_pos, corner_pos, IM_COL32(200, 200, 200, 255), 1.5);
+    if(is_fixed) ImPlot::GetPlotDrawList()->AddLine(tooltip_pos, corner_pos, IM_COL32(0, 0, 0, 255), 1.5);
 }
 
 TooltipPos drag_tooltip(const std::string &tooltip_win_id, const ImVec2 &tooltip_pix_pos)

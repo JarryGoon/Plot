@@ -19,6 +19,6 @@
 
 #include "PlottingType.hpp"
 
-double distance(const ImVec2 &p1, const ImVec2 &p2);
+double vec_dist(const ImVec2 &p1, const ImVec2 &p2);
 
 #endif //PLOT_TYPEFUNC_HPP

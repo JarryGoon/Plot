@@ -17,7 +17,8 @@
 #include <iostream>
 #include <map>
 
-#include "PlottingFunc.hpp"
+#include "GuiInterface.hpp"
+#include "PlotUtils.hpp"
 #include "CommManager.hpp"
 
 static std::map<std::string, PlotWindow> plot_windows;
@@ -32,7 +33,6 @@ int main()
     PlotType    flags;
 
     init_comm_manager();
-
     init_ImPlot(&gl_context, &window);
     if(!window)
     {
@@ -65,6 +65,10 @@ int main()
 
                 case BODE:
                     bode_plot(window_name, *plot_window);
+                    break;
+
+                case PZMAP:
+                    pzmap_plot(window_name, *plot_window);
                     break;
 
                 default:

@@ -24,7 +24,8 @@ enum PlotType
     NONE,
     EXIT_APP,
     PLOT_2D,
-    BODE
+    BODE,
+    PZMAP
 };
 
 struct PlotHeader

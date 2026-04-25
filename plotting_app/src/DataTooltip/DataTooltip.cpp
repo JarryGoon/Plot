@@ -26,6 +26,8 @@
 
 #define TOOLTIP_GAP 16.0f
 
+#define TOOLTIP_TEXT_BUFFER_SIZE 128
+
 ImVec2 find_closest_point(ImVec2 mouse, const std::vector<double> &x_data, const std::vector<double> &y_data)
 {
     ImVec2 pixel_pos;
@@ -61,14 +63,15 @@ ImVec2 find_closest_point(ImVec2 mouse, const std::vector<double> &x_data, const
     return {static_cast<float>(x_data[best_idx]), static_cast<float>(y_data[best_idx])};
 }
 
-CursorAction draw_tooltip(const ImVec2 &cursor, const std::string &id, const std::string &window_name,
-                          const char* print_format, bool is_fixed)
+CursorAction draw_tooltip(const TooltipData &tooltip_data, const std::string &id, const std::string &window_name,
+                          bool is_fixed,                   ToolTipType print_type)
 {
     static std::map<std::string, TooltipPos> tooltip_pos_map;
 
     CursorAction action = None;
 
-    char   text_buf[TOOLTIP_TEXT_BUFFER_SIZE];
+    ImVec2 data;
+
     ImVec2 text_size;
     ImVec2 tooltip_pix_pos;
     ImVec2 tooltip_win_size;
@@ -81,24 +84,72 @@ CursorAction draw_tooltip(const ImVec2 &cursor, const std::string &id, const std
     ImVec2 plot_pos;
     ImVec2 plot_size;
 
+    double wn;
+    double zeta;
+
+    const char *line_name;
+    char        text_buf[TOOLTIP_TEXT_BUFFER_SIZE];
+
     // ============================================================================================================== //
-    //                                                1. Draw Datapoint                                               //
+    // 1. Draw Datapoint
     // ============================================================================================================== //
 
-    draw_datapoint(cursor, id, is_fixed);
+    data      = tooltip_data.tooltip_data;
+    line_name = tooltip_data.line_id.c_str();
+
+    draw_datapoint(data, id, is_fixed);
 
     // ============================================================================================================== //
-    //                                           2. Initialize Tooltip Window                                         //
+    // 2. Tooltip Text
+    // ============================================================================================================== //
+
+    switch(print_type)
+    {
+        case PHASE:
+            snprintf(text_buf, TOOLTIP_TEXT_BUFFER_SIZE,
+                     "%s\nFreq. : %.3f rad/s\nPhase: %.3f deg",
+                     line_name, data.x, data.y);
+            break;
+
+        case MAGNITUDE:
+            snprintf(text_buf, TOOLTIP_TEXT_BUFFER_SIZE,
+                     "%s\nFreq.: %.3f rad/s\nMag. : %.3f dB",
+                     line_name, data.x, data.y);
+            break;
+
+        case POLE:
+            wn   = std::sqrt(data.x * data.x + data.y * data.y);
+            zeta = -data.x / wn;
+            snprintf(text_buf, TOOLTIP_TEXT_BUFFER_SIZE,
+                     "%s(Pole)\nFreq.: %.3f rad/s\nZeta : %.3f",
+                     line_name, wn, zeta);
+            break;
+
+        case ZERO:
+            wn   = std::sqrt(data.x * data.x + data.y * data.y);
+            zeta = -data.x / wn;
+            snprintf(text_buf, TOOLTIP_TEXT_BUFFER_SIZE,
+                     "%s(Zero)\nFreq.: %.3f rad/s\nZeta : %.3f",
+                     line_name, wn, zeta);
+            break;
+
+        default:
+            snprintf(text_buf, TOOLTIP_TEXT_BUFFER_SIZE,
+                     "%s\nX: %.3f\nY: %.3f",
+                     line_name, data.x, data.y);
+            break;
+    }
+
+    // ============================================================================================================== //
+    // 3. Initialize Tooltip Window
     // ============================================================================================================== //
 
     // Create window ID
     tooltip_win_id = "2DDataTooltip_" + window_name + "_" + id;
 
-    snprintf(text_buf, TOOLTIP_TEXT_BUFFER_SIZE, print_format, cursor.x, cursor.y);
-
     text_size        = ImGui::CalcTextSize(text_buf);
     tooltip_win_size = ImVec2(text_size.x + TOOLTIP_GAP, text_size.y + TOOLTIP_GAP); // 약간의 여백(Padding) 추가
-    tooltip_pix_pos  = ImPlot::PlotToPixels(cursor.x, cursor.y);
+    tooltip_pix_pos  = ImPlot::PlotToPixels(data.x, data.y);
 
     // Check Tooltip Position
     // If it doesn't exist, set the default position
@@ -132,7 +183,7 @@ CursorAction draw_tooltip(const ImVec2 &cursor, const std::string &id, const std
     if (!is_fixed) tooltip_win_flags |= ImGuiWindowFlags_NoInputs;
 
     // ============================================================================================================== //
-    //                                            3. Generate Tooltip Window                                          //
+    // 4. Generate Tooltip Window
     // ============================================================================================================== //
 
     if (ImGui::BeginChild(tooltip_win_id.c_str(), tooltip_win_size, true, tooltip_win_flags))
@@ -151,7 +202,7 @@ CursorAction draw_tooltip(const ImVec2 &cursor, const std::string &id, const std
         // Delete tooltip top-up
         if (ImGui::BeginPopupContextItem("Popup", ImGuiPopupFlags_MouseButtonRight))
         {
-            if (ImGui::MenuItem("Delete")) action = DeleteCurrent;
+            if (ImGui::MenuItem("Delete"))    action = DeleteCurrent;
             if (ImGui::MenuItem("Clear All")) action = ClearAll;
             ImGui::EndPopup();
         }
@@ -164,28 +215,35 @@ CursorAction draw_tooltip(const ImVec2 &cursor, const std::string &id, const std
     return action;
 }
 
-void plot_tooltip_data(std::vector<TooltipData> &cursor_data, const std::string &window_name,
-                       const char* print_format, ToolTipType print_type)
+void plot2d_tooltip_data(std::vector<TooltipData> &vec_tooltip_data, const std::string &window_name,
+                         ToolTipType print_type)
 {
     ImPlotItem* item;
 
     CursorAction action;
 
+    ToolTipType tooltip_type;
+
     int cursor_to_delete = -1;
     bool clear_all_requested = false;
 
-    for(int i = 0; i < cursor_data.size(); i++)
+    for(int i = 0; i < vec_tooltip_data.size(); i++)
     {
-        item = ImPlot::GetItem(cursor_data[i].line_id.c_str());
+        item = ImPlot::GetItem(vec_tooltip_data[i].line_id.c_str());
         if(item != nullptr && !item->Show) continue;
 
-        if(print_type != DEFAULT && print_type != cursor_data[i].tooltip_type)
+        tooltip_type = vec_tooltip_data[i].tooltip_type;
+
+        if(print_type != tooltip_type &&
+           print_type != PZ           ||
+           (tooltip_type != POLE && tooltip_type != ZERO))
             continue;
 
         ImGui::PushID(i);
 
         // 커서를 화면에 그리고, 반환된 액션 처리 (배열의 요소들은 고정이므로 is_fixed = true)
-        action = draw_tooltip(cursor_data[i].tooltip_data, std::to_string(i), window_name, print_format, true);
+        action = draw_tooltip(vec_tooltip_data[i], std::to_string(i),
+                              window_name, true, tooltip_type);
 
         if (action == DeleteCurrent) cursor_to_delete = i;
         else if (action == ClearAll) clear_all_requested = true;
@@ -194,7 +252,7 @@ void plot_tooltip_data(std::vector<TooltipData> &cursor_data, const std::string 
     }
 
     if (clear_all_requested)
-        cursor_data.clear();
+        vec_tooltip_data.clear();
     else if (cursor_to_delete != -1)
-        cursor_data.erase(cursor_data.begin() + cursor_to_delete);
+        vec_tooltip_data.erase(vec_tooltip_data.begin() + cursor_to_delete);
 }

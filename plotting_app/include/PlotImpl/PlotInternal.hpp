@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-#ifndef CONTROL_LIBRARY_PLOT_HPP
-#define CONTROL_LIBRARY_PLOT_HPP
+#ifndef PLOT_PLOTINTERNAL_HPP
+#define PLOT_PLOTINTERNAL_HPP
 
-#include <vector>
+#include "PlottingType.hpp"
 
-namespace Plot {
+namespace PlotImpl {
 
-void plot(const std::vector<double> &x, const std::vector<double> &y,
-          const char* win_name = ""   , const char* line_name = "");
+void draw_line(const std::string &window_name, PlotWindow &plot_window, ToolTipType plot_type);
 
-void bode_plot(const std::vector<double> &freq, const std::vector<double> &mag, const std::vector<double> &phase);
-
-void pzmap_plot(const std::vector<double> &real, const std::vector<double> &imag, const std::vector<double> &pz);
+void draw_pzmap(const std::string &window_name, PlotWindow &plot_window);
 
 }
 
-#endif //CONTROL_LIBRARY_PLOT_HPP
+#endif //PLOT_PLOTINTERNAL_HPP

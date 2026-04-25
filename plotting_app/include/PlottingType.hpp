@@ -28,7 +28,10 @@ enum ToolTipType
 {
     DEFAULT,
     MAGNITUDE,
-    PHASE
+    PHASE,
+    PZ,
+    POLE,
+    ZERO,
 };
 
 struct LineData
@@ -53,7 +56,7 @@ struct PlotWindow
     bool                  is_open   = true;
 
     bool                     is_cursor_data = false;
-    std::vector<TooltipData> vec_tooltip;
+    std::vector<TooltipData> vec_tooltip_data;
 };
 
 #endif //CONTROL_LIBRARY_PLOTTINGTYPE_HPP
