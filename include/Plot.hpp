@@ -18,16 +18,51 @@
 #define CONTROL_LIBRARY_PLOT_HPP
 
 #include <vector>
+#include <complex>
 
-namespace Plot {
+#include <zmq.hpp>
 
-void plot(const std::vector<double> &x, const std::vector<double> &y,
-          const char* win_name = ""   , const char* line_name = "");
+class Plot final
+{
+public:
+    Plot();
 
-void bode_plot(const std::vector<double> &freq, const std::vector<double> &mag, const std::vector<double> &phase);
+    ~Plot() = default;
 
-void pzmap_plot(const std::vector<double> &real, const std::vector<double> &imag, const std::vector<double> &pz);
+    void figure(const std::string& name);
+    void figure(uint32_t num);
 
-}
+    void subplot(uint32_t rows, uint32_t cols, uint32_t idx);
+
+    void title(const std::string& title);
+
+    void plot(const std::vector<double> &x, const std::vector<double> &y,
+              const char* line_name = "") const;
+
+    void bode(const std::vector<double> &freq, const std::vector<double> &mag, const std::vector<double> &phase,
+              const char* line_name = "") const;
+
+    void pzmap(const std::vector<std::complex<double>> &pole, const std::vector<std::complex<double>> &zero,
+                 const char* line_name = "") const;
+
+private:
+    uint32_t subplot_rows;
+    uint32_t subplot_cols;
+    uint32_t subplot_idx;
+
+    std::string _curr_win_name;
+    std::string _curr_plot_name;
+
+    static zmq::context_t _context;
+    static zmq::socket_t  _socket;
+
+    static bool _connect_plotting_app();
+
+    static void _send_data(const char* win_name, const char* plot_name, const char* line_name,
+                           const std::vector<double>& x, const std::vector<double>& y, const std::vector<double> &z,
+                           uint32_t flags);
+
+    static void _init_plotting_app();
+};
 
 #endif //CONTROL_LIBRARY_PLOT_HPP

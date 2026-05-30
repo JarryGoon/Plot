@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "PlotFigure.hpp"
 #include "PlotHeader.hpp"
 #include "CommManager.hpp"
 
@@ -22,6 +23,9 @@
 static zmq::context_t context(1);
 static zmq::socket_t  socket(context, zmq::socket_type::pull);
 static zmq::socket_t  rep_socket(context, zmq::socket_type::rep);
+
+typedef std::_Rb_tree_iterator<std::pair<const std::string, PlotWindow>> plot_window_iterator;
+typedef std::pair<plot_window_iterator, bool>                            window_map_pair;
 
 void init_comm_manager()
 {
@@ -53,17 +57,28 @@ PlotType receive_plot_data(std::map<std::string, PlotWindow>* plot_windows)
     std::vector<double> y_vec;
     std::vector<double> z_vec;
 
-    PlotType plot_type;
+    uint32_t subplot_x;
+    uint32_t subplot_y;
+    uint32_t subplot_idx;
 
     std::string window_name;
-    int         figure_num = 1;
-
+    std::string plot_name;
     std::string line_name;
-    int         line_num = 1;
 
-    LineData    new_line;
-    bool        line_exists;
+    plot_window_iterator plot_window_iter;
+    window_map_pair      map_pair;
 
+    PlotWindow* plot_window;
+    PlotFigure* plot_data;
+    LineData*   line_data;
+
+    PlotType plot_type;
+
+    int figure_num = 1;
+
+    // ============================================================================================================== //
+    // Receive and process plot data message
+    // ============================================================================================================== //
 
     res1 = socket.recv(msg_header, zmq::recv_flags::dontwait);
     if (!res1) return NONE;
@@ -76,6 +91,10 @@ PlotType receive_plot_data(std::map<std::string, PlotWindow>* plot_windows)
     if(msg_z.size()) recv_z_data = true;
     else             recv_z_data = false;
 
+    // ============================================================================================================== //
+    // Data parsing
+    // ============================================================================================================== //
+
     header = static_cast<PlotHeader*>(msg_header.data());
     x_ptr  = static_cast<double*>(msg_x.data());
     y_ptr  = static_cast<double*>(msg_y.data());
@@ -84,6 +103,7 @@ PlotType receive_plot_data(std::map<std::string, PlotWindow>* plot_windows)
         z_ptr  = static_cast<double*>(msg_z.data());
 
     window_name = header->window_name;
+    // plot_name   = header->plot_name;
     line_name   = header->line_name;
     plot_type   = header->flags;
 
@@ -93,63 +113,40 @@ PlotType receive_plot_data(std::map<std::string, PlotWindow>* plot_windows)
     if(recv_z_data)
         z_vec.assign(z_ptr, z_ptr + header->data_size);
 
+    // ============================================================================================================== //
+    // Save Data to buffer of plotting windows
+    // ============================================================================================================== //
+
+    // Load Plotting Window
+    // If map not has window, same name, create new window
     if(window_name.empty())
     {
         while(true)
         {
             window_name = "Figure " + std::to_string(figure_num);
 
-            if(plot_windows->find(window_name) == plot_windows->end()) break;
-            if((*plot_windows)[window_name].plot_type == plot_type) break;
+            if(plot_windows->find(window_name) == plot_windows->end())
+                break;
 
             figure_num++;
         }
     }
 
-    if(line_name.empty())
-    {
-        while(true)
-        {
-            line_name  = "Data " + std::to_string(line_num);
-            line_exists = false;
+    map_pair         = plot_windows->try_emplace(window_name, window_name);
+    plot_window_iter = map_pair.first;
+    plot_window      = &(plot_window_iter->second);
 
-            for (auto& line : (*plot_windows)[window_name].lines)
-            {
-                if (line.name == line_name)
-                {
-                    line_exists = true;
-                    break;
-                }
-            }
+    // Load Plot Data
+    plot_data = plot_window->add_plot_data("", plot_type);
 
-            if(!line_exists) break;
+    // Load Line Data
+    line_data = plot_data->add_line_data(line_name);
 
-            line_num++;
-        }
-    }
+    line_data->x = std::move(x_vec);
+    line_data->y = std::move(y_vec);
 
-    line_exists = false;
-    for (auto& line : (*plot_windows)[window_name].lines)
-    {
-        if (line.name == line_name)
-        {
-            line.x = std::move(x_vec);
-            line.y = std::move(y_vec);
-
-            if(recv_z_data)
-                line.z = std::move(z_vec);
-
-            line_exists = true;
-            break;
-        }
-    }
-
-    if (!line_exists)
-    {
-        new_line = {std::move(x_vec), std::move(y_vec), std::move(z_vec), line_name};
-        (*plot_windows)[window_name].lines.push_back(new_line);
-        (*plot_windows)[window_name].plot_type = plot_type;
-    }
+    if(recv_z_data)
+        line_data->z = std::move(z_vec);
 
     return header->flags;
 }

@@ -19,7 +19,7 @@
 
 #include <map>
 
-#include "PlottingType.hpp"
+#include "PlotWindow.hpp"
 
 void init_comm_manager();
 

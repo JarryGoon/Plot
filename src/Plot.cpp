@@ -18,115 +18,38 @@
 #include "PlotHeader.hpp"
 
 #include <iostream>
-#include <cstdlib>
-#include <chrono>
-#include <thread>
 
-#include <zmq.hpp>
+zmq::context_t Plot::_context(1);
+zmq::socket_t  Plot::_socket(_context, zmq::socket_type::push);
 
-static zmq::context_t context(1);
-static zmq::socket_t  socket(context, zmq::socket_type::push);
+Plot::Plot() : subplot_rows(0),
+               subplot_cols(0),
+               subplot_idx(0)
+{}
 
-bool connect_plotting_app()
+void Plot::figure(const std::string& name)
 {
-    zmq::send_result_t send_result;
-    zmq::recv_result_t recv_result;
-    zmq::message_t     msg;
-
-    zmq::socket_t req_socket(context, zmq::socket_type::req);
-
-    // 1. Connect Check
-    req_socket.set(zmq::sockopt::rcvtimeo, 100);
-    req_socket.set(zmq::sockopt::linger, 0);
-
-    req_socket.connect("tcp://127.0.0.1:5556");
-
-    // 2. Send PING
-    send_result = req_socket.send(zmq::message_t("PING", 4), zmq::send_flags::none);
-    if(!send_result) return false;
-
-    // 3. Receive PONG
-    recv_result = req_socket.recv(msg, zmq::recv_flags::none);
-
-    return recv_result.has_value();
+    _curr_win_name = name;
 }
 
-void send_data(const char* win_name, const char* line_name,
-               const std::vector<double>& x, const std::vector<double>& y, const std::vector<double> &z,
-               PlotType flags)
+void Plot::figure(uint32_t num)
 {
-    PlotHeader header;
-    std::strncpy(header.window_name, win_name, sizeof(header.window_name));
-    std::strncpy(header.line_name, line_name, sizeof(header.line_name));
-
-    header.data_size = x.size();
-    header.flags = flags;
-
-    zmq::message_t msg_header;
-    zmq::message_t msg_x;
-    zmq::message_t msg_y((void*)y.data(), y.size() * sizeof(double));
-    zmq::message_t msg_z((void*)z.data(), z.size() * sizeof(double));
-
-    msg_header = zmq::message_t(&header, sizeof(PlotHeader));
-    msg_x      = zmq::message_t(x.data(), x.size() * sizeof(double));
-    msg_y      = zmq::message_t(y.data(), y.size() * sizeof(double));
-
-    if(z.empty()) msg_z = zmq::message_t();
-    else          msg_z = zmq::message_t(z.data(), z.size() * sizeof(double));
-
-    socket.send(msg_header, zmq::send_flags::sndmore);
-    socket.send(msg_x, zmq::send_flags::sndmore);
-    socket.send(msg_y, zmq::send_flags::none);
-    socket.send(msg_z, zmq::send_flags::none);
+    _curr_win_name = "Figure " + std::to_string(num);
 }
 
-void init_plotting_app()
+void Plot::subplot(uint32_t rows, uint32_t cols, uint32_t idx)
 {
-    static auto last_check_time = std::chrono::system_clock::time_point::min();
-    static bool is_connected = false;
-
-    auto now = std::chrono::system_clock::now();
-    long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_check_time).count();
-
-    bool app_ready;
-
-    if(!is_connected || elapsed > 1000)
-    {
-        last_check_time = now;
-
-        if(!connect_plotting_app())
-        {
-            std::system("Plotting_App &");
-
-            app_ready = false;
-            for(int i = 0; i < 20; i++)
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-                if(connect_plotting_app())
-                {
-                    app_ready = true;
-                    break;
-                }
-            }
-
-            if(!app_ready)
-            {
-                std::cerr << "Failed to connect to plotting app" << std::endl;
-                return;
-            }
-        }
-
-        if(!is_connected)
-        {
-            socket.connect("tcp://127.0.0.1:5555");
-            is_connected = true;
-        }
-    }
+    subplot_rows = rows;
+    subplot_cols = cols;
+    subplot_idx  = idx;
 }
 
-void Plot::plot(const std::vector<double> &x, const std::vector<double> &y,
-          const char* win_name        , const char* line_name)
+void Plot::title(const std::string& title)
+{
+    _curr_plot_name = title;
+}
+
+void Plot::plot(const std::vector<double> &x, const std::vector<double> &y, const char* line_name) const
 {
     if(x.empty() || y.empty())
     {
@@ -140,12 +63,14 @@ void Plot::plot(const std::vector<double> &x, const std::vector<double> &y,
         return;
     }
 
-    init_plotting_app();
+    _init_plotting_app();
 
-    send_data(win_name, line_name, x, y, {}, PLOT_2D);
+    _send_data(_curr_win_name.c_str(), _curr_plot_name.c_str(), line_name,
+               x, y, {}, PLOT_2D);
 }
 
-void Plot::bode_plot(const std::vector<double> &freq, const std::vector<double> &mag, const std::vector<double> &phase)
+void Plot::bode(const std::vector<double> &freq, const std::vector<double> &mag, const std::vector<double> &phase,
+                const char*                line_name) const
 {
     if(freq.size() != mag.size() || mag.size() != phase.size())
     {
@@ -153,20 +78,33 @@ void Plot::bode_plot(const std::vector<double> &freq, const std::vector<double> 
         return;
     }
 
-    init_plotting_app();
+    _init_plotting_app();
 
-    send_data("", "", freq, mag, phase, BODE);
+    _send_data(_curr_win_name.c_str(), _curr_plot_name.c_str(), line_name, freq, mag, phase, BODE);
 }
 
-void Plot::pzmap_plot(const std::vector<double> &real, const std::vector<double> &imag, const std::vector<double> &pz)
+void Plot::pzmap(const std::vector<std::complex<double>> &pole, const std::vector<std::complex<double>> &zero,
+                 const char*                              line_name) const
 {
-    if(real.size() != imag.size() || imag.size() != pz.size())
+    size_t num_pole = pole.size() << 1;
+    size_t num_zero = zero.size() << 1;
+
+    std::vector<double> vec_pole(num_pole);
+    std::vector<double> vec_zero(num_zero);
+
+    for(size_t i = 0; i < pole.size(); i++)
     {
-        std::cerr << "real, imag, and pz vectors must be of the same size" << std::endl;
-        return;
+        vec_pole.at(i << 1)       = pole[i].real();
+        vec_pole.at((i << 1) + 1) = pole[i].imag();
     }
 
-    init_plotting_app();
+    for(size_t i = 0; i < zero.size(); i++)
+    {
+        vec_zero.at(i << 1)       = zero[i].real();
+        vec_zero.at((i << 1) + 1) = zero[i].imag();
+    }
 
-    send_data("", "", real, imag, pz, PZMAP);
+    _init_plotting_app();
+
+    _send_data(_curr_win_name.c_str(), _curr_plot_name.c_str(), line_name, vec_pole, vec_zero, {}, PZMAP);
 }

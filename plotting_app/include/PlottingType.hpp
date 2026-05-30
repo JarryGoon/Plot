@@ -39,7 +39,6 @@ struct LineData
     std::vector<double> x;
     std::vector<double> y;
     std::vector<double> z;
-    std::string         name;
 };
 
 struct TooltipData
@@ -47,16 +46,6 @@ struct TooltipData
     std::string line_id;
     ToolTipType tooltip_type;
     ImVec2      tooltip_data;
-};
-
-struct PlotWindow
-{
-    std::vector<LineData> lines;
-    PlotType              plot_type = NONE;
-    bool                  is_open   = true;
-
-    bool                     is_cursor_data = false;
-    std::vector<TooltipData> vec_tooltip_data;
 };
 
 #endif //CONTROL_LIBRARY_PLOTTINGTYPE_HPP

@@ -19,11 +19,15 @@
 
 #include "PlottingType.hpp"
 
+#include <map>
+
 namespace PlotImpl {
 
-void draw_line(const std::string &window_name, PlotWindow &plot_window, ToolTipType plot_type);
+void draw_line(const std::string &                    window_name   ,
+               const std::map<std::string, LineData> &line_datas    , std::vector<TooltipData> *vec_tooltip_data,
+               bool                                   is_cursor_data, ToolTipType               plot_type);
 
-void draw_pzmap(const std::string &window_name, PlotWindow &plot_window);
+// void draw_pzmap(const std::string &window_name, PlotWindow &plot_window);
 
 }
 

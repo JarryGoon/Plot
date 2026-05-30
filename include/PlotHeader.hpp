@@ -30,10 +30,16 @@ enum PlotType
 
 struct PlotHeader
 {
+    char     window_name[256];
+    char     plot_name[256];
+    char     line_name[256];
+
+    uint32_t subplot_x;
+    uint32_t subplot_y;
+    uint32_t subplot_idx;
+
     uint32_t data_size;
     PlotType flags;
-    char     window_name[256];
-    char     line_name[256];
 };
 
 #endif //CONTROL_LIBRARY_PLOTHEADER_H

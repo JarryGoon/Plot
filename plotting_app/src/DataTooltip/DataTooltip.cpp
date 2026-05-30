@@ -28,6 +28,37 @@
 
 #define TOOLTIP_TEXT_BUFFER_SIZE 128
 
+bool tooltip_button(bool* is_active, const ImVec2& size)
+{
+    bool    was_clicked = false;
+    ImVec4* colors      = ImGui::GetStyle().Colors;
+
+    ImVec4 active_color(0.2f, 0.4f, 0.8f, 1.0f);
+
+    if(*is_active)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Button, active_color);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, active_color);
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, active_color);
+    }
+    else
+    {
+        ImGui::PushStyleColor(ImGuiCol_Button, colors[ImGuiCol_Button]);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, colors[ImGuiCol_ButtonHovered]);
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, active_color);
+    }
+
+    if (ImGui::Button("Data Tooltip", size))
+    {
+        *is_active = !*is_active;
+        was_clicked = true;
+    }
+
+    ImGui::PopStyleColor(3);
+
+    return was_clicked;
+}
+
 ImVec2 find_closest_point(ImVec2 mouse, const std::vector<double> &x_data, const std::vector<double> &y_data)
 {
     ImVec2 pixel_pos;
@@ -215,7 +246,7 @@ CursorAction draw_tooltip(const TooltipData &tooltip_data, const std::string &id
     return action;
 }
 
-void plot2d_tooltip_data(std::vector<TooltipData> &vec_tooltip_data, const std::string &window_name,
+void plot2d_tooltip_data(std::vector<TooltipData> *vec_tooltip_data, const std::string &window_name,
                          ToolTipType print_type)
 {
     ImPlotItem* item;
@@ -227,22 +258,20 @@ void plot2d_tooltip_data(std::vector<TooltipData> &vec_tooltip_data, const std::
     int cursor_to_delete = -1;
     bool clear_all_requested = false;
 
-    for(int i = 0; i < vec_tooltip_data.size(); i++)
+    for(int i = 0; i < vec_tooltip_data->size(); i++)
     {
-        item = ImPlot::GetItem(vec_tooltip_data[i].line_id.c_str());
+        item = ImPlot::GetItem((*vec_tooltip_data)[i].line_id.c_str());
         if(item != nullptr && !item->Show) continue;
 
-        tooltip_type = vec_tooltip_data[i].tooltip_type;
+        tooltip_type = (*vec_tooltip_data)[i].tooltip_type;
 
-        if(print_type != tooltip_type &&
-           print_type != PZ           ||
-           (tooltip_type != POLE && tooltip_type != ZERO))
+        if(print_type != tooltip_type)
             continue;
 
         ImGui::PushID(i);
 
         // 커서를 화면에 그리고, 반환된 액션 처리 (배열의 요소들은 고정이므로 is_fixed = true)
-        action = draw_tooltip(vec_tooltip_data[i], std::to_string(i),
+        action = draw_tooltip((*vec_tooltip_data)[i], std::to_string(i),
                               window_name, true, tooltip_type);
 
         if (action == DeleteCurrent) cursor_to_delete = i;
@@ -252,7 +281,7 @@ void plot2d_tooltip_data(std::vector<TooltipData> &vec_tooltip_data, const std::
     }
 
     if (clear_all_requested)
-        vec_tooltip_data.clear();
+        vec_tooltip_data->clear();
     else if (cursor_to_delete != -1)
-        vec_tooltip_data.erase(vec_tooltip_data.begin() + cursor_to_delete);
+        vec_tooltip_data->erase(vec_tooltip_data->begin() + cursor_to_delete);
 }

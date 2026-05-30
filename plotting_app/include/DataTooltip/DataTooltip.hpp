@@ -25,12 +25,14 @@ typedef enum CursorAction {
     ClearAll
 } CursorAction;
 
+bool tooltip_button(bool* is_active, const ImVec2& size = ImVec2(0, 0));
+
 ImVec2 find_closest_point(ImVec2 mouse, const std::vector<double> &x_data, const std::vector<double> &y_data);
 
 CursorAction draw_tooltip(const TooltipData &tooltip_data, const std::string &id, const std::string &window_name,
                           bool is_fixed,                   ToolTipType print_type = DEFAULT);
 
-void plot2d_tooltip_data(std::vector<TooltipData> &vec_tooltip_data, const std::string &window_name,
+void plot2d_tooltip_data(std::vector<TooltipData> *vec_tooltip_data, const std::string &window_name,
                          ToolTipType print_type = DEFAULT);
 
 #endif //PLOT_DATATOOLTIP_HPP

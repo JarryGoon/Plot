@@ -14,15 +14,32 @@
  * limitations under the License.
  */
 
-#ifndef CONTROL_LIBRARY_PLOTUTILS_HPP
-#define CONTROL_LIBRARY_PLOTUTILS_HPP
 
+#ifndef PLOT_PLOTWINDOW_HPP
+#define PLOT_PLOTWINDOW_HPP
+
+#include "PlotFigure.hpp"
 #include "PlottingType.hpp"
 
-void plot_2d(const std::string &window_name, PlotWindow &plot_window);
+class PlotWindow final
+{
+public:
+    PlotWindow(const std::string &window_name);
 
-void bode_plot(const std::string &window_name, PlotWindow &plot_window);
+    bool get_is_open() const { return _is_open; }
 
-void pzmap_plot(const std::string &window_name, PlotWindow &plot_window);
+    PlotFigure* add_plot_data(const std::string &data_name, PlotType type);
 
-#endif //CONTROL_LIBRARY_PLOTUTILS_HPP
+    PlotFigure* get_plot_data(const std::string &data_name, PlotType type);
+
+    void draw();
+
+private:
+    bool        _is_open;
+    std::string _window_name;
+
+    std::vector<PlotFigure> _plot_data;
+};
+
+
+#endif //PLOT_PLOTWINDOW_HPP

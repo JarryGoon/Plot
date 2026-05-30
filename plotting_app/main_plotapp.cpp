@@ -15,10 +15,9 @@
  */
 
 #include <iostream>
-#include <map>
 
+#include "PlotWindow.hpp"
 #include "GuiInterface.hpp"
-#include "PlotUtils.hpp"
 #include "CommManager.hpp"
 
 static std::map<std::string, PlotWindow> plot_windows;
@@ -28,7 +27,6 @@ int main()
     SDL_GLContext gl_context = nullptr;
     SDL_Window*   window     = nullptr;
 
-    std::string window_name;
     PlotWindow* plot_window;
     PlotType    flags;
 
@@ -36,7 +34,7 @@ int main()
     init_ImPlot(&gl_context, &window);
     if(!window)
     {
-        std::cout << "SDL3 & OpenGL Initialization Failed!" << std::endl;
+        std::cerr << "SDL3 & OpenGL Initialization Failed!" << std::endl;
         return -1;
     }
 
@@ -54,28 +52,11 @@ int main()
 
         for(auto it = plot_windows.begin(); it != plot_windows.end();)
         {
-            window_name = it->first;
             plot_window = &(it->second);
 
-            switch(plot_window->plot_type)
-            {
-                case PLOT_2D:
-                    plot_2d(window_name, *plot_window);
-                    break;
+            plot_window->draw();
 
-                case BODE:
-                    bode_plot(window_name, *plot_window);
-                    break;
-
-                case PZMAP:
-                    pzmap_plot(window_name, *plot_window);
-                    break;
-
-                default:
-                    break;
-            }
-
-            if(!plot_window->is_open)
+            if(!plot_window->get_is_open())
                 it = plot_windows.erase(it);
             else
                 ++it;
