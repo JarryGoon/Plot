@@ -48,9 +48,10 @@ PlotType receive_plot_data(std::map<std::string, PlotWindow>* plot_windows)
 
     PlotHeader* header;
     double*     x_ptr;
-    double*     y_ptr;
+    double*     y_ptr = nullptr;
     double*     z_ptr = nullptr;
 
+    bool recv_y_data;
     bool recv_z_data;
 
     std::vector<double> x_vec;
@@ -88,6 +89,9 @@ PlotType receive_plot_data(std::map<std::string, PlotWindow>* plot_windows)
     res4 = socket.recv(msg_z, zmq::recv_flags::none);
     if (!res2 || !res3 || !res4) return NONE;
 
+    if(msg_y.size()) recv_y_data = true;
+    else             recv_y_data = false;
+
     if(msg_z.size()) recv_z_data = true;
     else             recv_z_data = false;
 
@@ -97,21 +101,19 @@ PlotType receive_plot_data(std::map<std::string, PlotWindow>* plot_windows)
 
     header = static_cast<PlotHeader*>(msg_header.data());
     x_ptr  = static_cast<double*>(msg_x.data());
-    y_ptr  = static_cast<double*>(msg_y.data());
 
-    if(recv_z_data)
-        z_ptr  = static_cast<double*>(msg_z.data());
+    if(recv_y_data) y_ptr  = static_cast<double*>(msg_y.data());
+    if(recv_z_data) z_ptr  = static_cast<double*>(msg_z.data());
 
     window_name = header->window_name;
     // plot_name   = header->plot_name;
     line_name   = header->line_name;
     plot_type   = header->flags;
 
-    x_vec.assign(x_ptr, x_ptr + header->data_size);
-    y_vec.assign(y_ptr, y_ptr + header->data_size);
+    x_vec.assign(x_ptr, x_ptr + header->num_x);
 
-    if(recv_z_data)
-        z_vec.assign(z_ptr, z_ptr + header->data_size);
+    if(recv_y_data) y_vec.assign(y_ptr, y_ptr + header->num_y);
+    if(recv_z_data) z_vec.assign(z_ptr, z_ptr + header->num_z);
 
     // ============================================================================================================== //
     // Save Data to buffer of plotting windows
@@ -143,10 +145,9 @@ PlotType receive_plot_data(std::map<std::string, PlotWindow>* plot_windows)
     line_data = plot_data->add_line_data(line_name);
 
     line_data->x = std::move(x_vec);
-    line_data->y = std::move(y_vec);
 
-    if(recv_z_data)
-        line_data->z = std::move(z_vec);
+    if(recv_y_data) line_data->y = std::move(y_vec);
+    if(recv_z_data) line_data->z = std::move(z_vec);
 
     return header->flags;
 }

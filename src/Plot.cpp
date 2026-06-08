@@ -19,13 +19,24 @@
 
 #include <iostream>
 
-zmq::context_t Plot::_context(1);
-zmq::socket_t  Plot::_socket(_context, zmq::socket_type::push);
+Plot::Plot()
+{
+    _subplot_rows = 1;
+    _subplot_cols = 1;
+    _subplot_idx  = 0;
 
-Plot::Plot() : subplot_rows(0),
-               subplot_cols(0),
-               subplot_idx(0)
-{}
+    _curr_win_name  = "Figure 1";
+    _curr_plot_name = "";
+
+    _context = zmq::context_t(1);
+    _socket  = zmq::socket_t(_context, zmq::socket_type::push);
+}
+
+Plot& Plot::instance()
+{
+    static Plot instance;
+    return instance;
+}
 
 void Plot::figure(const std::string& name)
 {
@@ -39,9 +50,9 @@ void Plot::figure(uint32_t num)
 
 void Plot::subplot(uint32_t rows, uint32_t cols, uint32_t idx)
 {
-    subplot_rows = rows;
-    subplot_cols = cols;
-    subplot_idx  = idx;
+    _subplot_rows = rows;
+    _subplot_cols = cols;
+    _subplot_idx  = idx;
 }
 
 void Plot::title(const std::string& title)
@@ -49,7 +60,7 @@ void Plot::title(const std::string& title)
     _curr_plot_name = title;
 }
 
-void Plot::plot(const std::vector<double> &x, const std::vector<double> &y, const char* line_name) const
+void Plot::plot(const std::vector<double> &x, const std::vector<double> &y, const char* line_name)
 {
     if(x.empty() || y.empty())
     {
@@ -69,8 +80,16 @@ void Plot::plot(const std::vector<double> &x, const std::vector<double> &y, cons
                x, y, {}, PLOT_2D);
 }
 
+void Plot::live_plot(double x, double y, const char *line_name)
+{
+    _init_plotting_app();
+
+    _send_data(_curr_win_name.c_str(), _curr_plot_name.c_str(), line_name,
+               std::vector<double>{x}, std::vector<double>{y}, {}, PLOT_LIVE);
+}
+
 void Plot::bode(const std::vector<double> &freq, const std::vector<double> &mag, const std::vector<double> &phase,
-                const char*                line_name) const
+                const char*                line_name)
 {
     if(freq.size() != mag.size() || mag.size() != phase.size())
     {
@@ -84,7 +103,7 @@ void Plot::bode(const std::vector<double> &freq, const std::vector<double> &mag,
 }
 
 void Plot::pzmap(const std::vector<std::complex<double>> &pole, const std::vector<std::complex<double>> &zero,
-                 const char*                              line_name) const
+                 const char*                              line_name)
 {
     size_t num_pole = pole.size() << 1;
     size_t num_zero = zero.size() << 1;

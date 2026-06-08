@@ -24,6 +24,7 @@ enum PlotType
     NONE,
     EXIT_APP,
     PLOT_2D,
+    PLOT_LIVE,
     BODE,
     PZMAP
 };
@@ -34,12 +35,15 @@ struct PlotHeader
     char     plot_name[256];
     char     line_name[256];
 
+    PlotType flags;
+
     uint32_t subplot_x;
     uint32_t subplot_y;
     uint32_t subplot_idx;
 
-    uint32_t data_size;
-    PlotType flags;
+    size_t num_x;
+    size_t num_y;
+    size_t num_z;
 };
 
 #endif //CONTROL_LIBRARY_PLOTHEADER_H

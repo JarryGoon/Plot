@@ -22,12 +22,19 @@
 
 #include <zmq.hpp>
 
+#define plt Plot::instance()
+
 class Plot final
 {
-public:
     Plot();
-
     ~Plot() = default;
+
+    Plot(const Plot&) = delete;
+    Plot& operator=(const Plot&) = delete;
+
+
+public:
+    static Plot& instance();
 
     void figure(const std::string& name);
     void figure(uint32_t num);
@@ -37,32 +44,34 @@ public:
     void title(const std::string& title);
 
     void plot(const std::vector<double> &x, const std::vector<double> &y,
-              const char* line_name = "") const;
+              const char* line_name = "");
+
+    void live_plot(double x, double y, const char* line_name = "");
 
     void bode(const std::vector<double> &freq, const std::vector<double> &mag, const std::vector<double> &phase,
-              const char* line_name = "") const;
+              const char* line_name = "");
 
     void pzmap(const std::vector<std::complex<double>> &pole, const std::vector<std::complex<double>> &zero,
-                 const char* line_name = "") const;
+               const char* line_name = "");
 
 private:
-    uint32_t subplot_rows;
-    uint32_t subplot_cols;
-    uint32_t subplot_idx;
+    uint32_t _subplot_rows;
+    uint32_t _subplot_cols;
+    uint32_t _subplot_idx;
 
     std::string _curr_win_name;
     std::string _curr_plot_name;
 
-    static zmq::context_t _context;
-    static zmq::socket_t  _socket;
+    zmq::context_t _context;
+    zmq::socket_t  _socket;
 
-    static bool _connect_plotting_app();
+    bool _connect_plotting_app();
 
-    static void _send_data(const char* win_name, const char* plot_name, const char* line_name,
+    void _send_data(const char* win_name, const char* plot_name, const char* line_name,
                            const std::vector<double>& x, const std::vector<double>& y, const std::vector<double> &z,
                            uint32_t flags);
 
-    static void _init_plotting_app();
+    void _init_plotting_app();
 };
 
 #endif //CONTROL_LIBRARY_PLOT_HPP

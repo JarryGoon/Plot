@@ -57,8 +57,10 @@ void Plot::_send_data(const char* win_name, const char* plot_name, const char* l
     header.subplot_y   = 1;
     header.subplot_idx = 1;
 
-    header.data_size = x.size();
-    header.flags     = (PlotType)flags;
+    header.num_x = x.size();
+    header.num_y = y.size();
+    header.num_z = z.size();
+    header.flags = (PlotType)flags;
 
     zmq::message_t msg_header;
     zmq::message_t msg_x;

@@ -148,20 +148,17 @@ CursorAction draw_tooltip(const TooltipData &tooltip_data, const std::string &id
                      line_name, data.x, data.y);
             break;
 
-        case POLE:
+        case PZ:
             wn   = std::sqrt(data.x * data.x + data.y * data.y);
             zeta = -data.x / wn;
-            snprintf(text_buf, TOOLTIP_TEXT_BUFFER_SIZE,
-                     "%s(Pole)\nFreq.: %.3f rad/s\nZeta : %.3f",
-                     line_name, wn, zeta);
-            break;
-
-        case ZERO:
-            wn   = std::sqrt(data.x * data.x + data.y * data.y);
-            zeta = -data.x / wn;
-            snprintf(text_buf, TOOLTIP_TEXT_BUFFER_SIZE,
-                     "%s(Zero)\nFreq.: %.3f rad/s\nZeta : %.3f",
-                     line_name, wn, zeta);
+            if(tooltip_data.tooltip_type == POLE)
+                snprintf(text_buf, TOOLTIP_TEXT_BUFFER_SIZE,
+                         "%s(Pole)\nFreq.: %.3f rad/s\nZeta : %.3f",
+                         line_name, wn, zeta);
+            else
+                snprintf(text_buf, TOOLTIP_TEXT_BUFFER_SIZE,
+                         "%s(Zero)\nFreq.: %.3f rad/s\nZeta : %.3f",
+                         line_name, wn, zeta);
             break;
 
         default:
@@ -265,14 +262,14 @@ void plot2d_tooltip_data(std::vector<TooltipData> *vec_tooltip_data, const std::
 
         tooltip_type = (*vec_tooltip_data)[i].tooltip_type;
 
-        if(print_type != tooltip_type)
+        if(print_type != tooltip_type && print_type != PZ)
             continue;
 
         ImGui::PushID(i);
 
         // 커서를 화면에 그리고, 반환된 액션 처리 (배열의 요소들은 고정이므로 is_fixed = true)
         action = draw_tooltip((*vec_tooltip_data)[i], std::to_string(i),
-                              window_name, true, tooltip_type);
+                              window_name, true, print_type);
 
         if (action == DeleteCurrent) cursor_to_delete = i;
         else if (action == ClearAll) clear_all_requested = true;

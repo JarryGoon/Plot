@@ -21,13 +21,20 @@
 
 #include <map>
 
+#include <implot.h>
+
 namespace PlotImpl {
 
 void draw_line(const std::string &                    window_name   ,
                const std::map<std::string, LineData> &line_datas    , std::vector<TooltipData> *vec_tooltip_data,
                bool                                   is_cursor_data, ToolTipType               plot_type);
 
-// void draw_pzmap(const std::string &window_name, PlotWindow &plot_window);
+void draw_pzmap(const std::string                     &window_name   ,
+                const std::map<std::string, LineData> &line_datas    , std::vector<TooltipData> *vec_tooltip_data,
+                bool                                   is_cursor_data);
+
+TooltipData pz_processing(const std::vector<double> &data, const char* line_name, const ImPlotSpec &spec,
+                          const ImVec2 &mouse_pos_pix, ToolTipType tooltip_type);
 
 }
 

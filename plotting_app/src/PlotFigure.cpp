@@ -178,5 +178,7 @@ void PlotFigure::pzmap(const std::string &window_name)
 
     PlotImpl::radial_grid(axis_flags);
 
+    PlotImpl::draw_pzmap(window_name, _line_data, &_vec_tooltip_data, _is_cursor_data);
+
     ImPlot::EndPlot();
 }
